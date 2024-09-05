@@ -47,6 +47,18 @@ app.post("/createContact", async (req, res) => {
     }
 
     else{
+
+        const ExistContact = await prisma.contact.findUnique({
+            where:{
+                email : email,
+                mobile_number: mobile_number
+            }
+        }) 
+
+        if(ExistContact){
+            return res.status(404).json({message : `Contant with these creds is already present` })
+        }
+
             const NewContact = await prisma.contact.create({
                 data:{
                     first_name,
