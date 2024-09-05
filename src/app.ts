@@ -99,6 +99,12 @@ app.get("/getContact/:contact_id",async (req,res)=>{
                 }
             })
 
+            if(!contact){
+                return res.status(404).json({
+                    message : `The contact with id = ${contact_id} is not found`
+                })
+            }
+
             return res.status(200).json(contact)
          
         }
@@ -123,22 +129,34 @@ app.delete("/deletecontact/:contact_id", async (req,res)=>{
     }
 
     try {
-        if(data_store === "CRM"){
-            await axios.delete(`https://${DOMAIN}.myfreshworks.com/crm/sales/api/contacts/${contact_id}`,{
+    
+    if(data_store === "CRM"){
+        await axios.delete(`https://${DOMAIN}.myfreshworks.com/crm/sales/api/contacts/${contact_id}`,{
                 headers:{
                     "Authorization": `Token token=${API_KEY}`,
                     "Content-Type": "application/json"
             }
-            })
+    })
             return res.status(200).json({message : `The contact with ID = ${contact_id} is deleted successfully`})
-        }
+    }
     
-        else if(data_store === 'DATABASE'){
-            await prisma.contact.delete({
+    else if(data_store === 'DATABASE'){
+
+        const ExistContact = await prisma.contact.findUnique({
+            where:{
+                id : Number(contact_id)
+            }
+        }) 
+
+        if(!ExistContact){
+            return res.status(404).json({message : `Contant with ${contact_id} is not found` })
+        }
+
+        await prisma.contact.delete({
                 where:{
                     id : Number(contact_id)
                 }
-            })   
+        })   
             return res.status(200).json({message : `The contact with ID = ${contact_id} is deleted successfully`})  
         }
     
@@ -159,7 +177,7 @@ app.delete("/deletecontact/:contact_id", async (req,res)=>{
 
 app.put("/updatecontact/:contact_id", async (req,res)=>{
 
-    //update only email and moblie_number 
+    
     const {contact_id} = req.params
     const { email, mobile_number, data_store } = req.body;
 
@@ -171,7 +189,7 @@ app.put("/updatecontact/:contact_id", async (req,res)=>{
 
     let finalresult
 
-        if(data_store === 'CRM'){
+     if(data_store === 'CRM'){
         const response = await axios.put(
             `https://${DOMAIN}.myfreshworks.com/crm/sales/api/contacts/${contact_id}`,
             {
